@@ -2,13 +2,40 @@ import * as pdfjsLib from 'pdfjs-dist';
 import { PDFDocument, rgb, PDFPage } from 'pdf-lib';
 import { PageEdits, EditOperation } from '@/types/pdf-editor';
 
-// Set up PDF.js worker - using a more reliable CDN
-pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://unpkg.com/pdfjs-dist@5.3.31/build/pdf.worker.min.js';
+// Initialize PDF.js worker
+let workerInitialized = false;
+
+function initializePDFWorker() {
+  if (workerInitialized) return;
+  
+  // Set worker source with error handling
+  try {
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    workerInitialized = true;
+  } catch (error) {
+    console.warn('PDF worker initialization failed, will use fallback');
+  }
+}
 
 export async function loadPDF(file: File) {
-  const arrayBuffer = await file.arrayBuffer();
-  const loadingTask = pdfjsLib.getDocument(arrayBuffer);
-  return await loadingTask.promise;
+  initializePDFWorker();
+  
+  try {
+    const arrayBuffer = await file.arrayBuffer();
+    const uint8Array = new Uint8Array(arrayBuffer);
+    
+    const loadingTask = pdfjsLib.getDocument({
+      data: uint8Array,
+      cMapUrl: 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/cmaps/',
+      cMapPacked: true,
+      verbosity: 0
+    });
+    
+    return await loadingTask.promise;
+  } catch (error) {
+    console.error('PDF loading failed:', error);
+    throw new Error('Failed to load PDF file. Please try a different PDF file.');
+  }
 }
 
 export async function renderPDFPage(
