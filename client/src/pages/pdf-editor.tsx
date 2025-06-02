@@ -129,6 +129,7 @@ export default function PDFEditor() {
                 currentTool={state.currentTool}
                 canvasRef={canvasRef}
                 editCanvasRef={editCanvasRef}
+                pageEdits={state.pageEdits}
                 onStartDrawing={startDrawing}
                 onContinueDrawing={continueDrawing}
                 onEndDrawing={endDrawing}

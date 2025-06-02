@@ -22,11 +22,71 @@ export function PDFViewer({
   currentTool,
   canvasRef,
   editCanvasRef,
+  pageEdits,
   onStartDrawing,
   onContinueDrawing,
   onEndDrawing
 }: PDFViewerProps) {
   const isDrawing = useRef(false);
+
+  // Function to draw a single edit operation
+  const drawOperation = useCallback((ctx: CanvasRenderingContext2D, operation: EditOperation) => {
+    if (operation.points.length === 0) return;
+
+    ctx.save();
+    
+    switch (operation.type) {
+      case 'blur':
+        ctx.globalCompositeOperation = 'multiply';
+        ctx.filter = `blur(${operation.properties.intensity}px)`;
+        ctx.strokeStyle = 'rgba(128, 128, 128, 0.7)';
+        ctx.lineWidth = operation.properties.brushSize;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        break;
+      case 'erase':
+        ctx.globalCompositeOperation = 'destination-out';
+        ctx.strokeStyle = 'rgba(0, 0, 0, 1)';
+        ctx.lineWidth = operation.properties.size;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        break;
+      case 'text':
+        ctx.font = `${operation.properties.fontSize}px ${operation.properties.fontFamily}`;
+        ctx.fillStyle = operation.properties.color;
+        ctx.textBaseline = 'top';
+        ctx.fillText(operation.properties.text || 'Text', operation.points[0].x, operation.points[0].y);
+        ctx.restore();
+        return;
+    }
+
+    // Draw stroke operations (blur and erase)
+    if (operation.points.length > 1) {
+      ctx.beginPath();
+      ctx.moveTo(operation.points[0].x, operation.points[0].y);
+      for (let i = 1; i < operation.points.length; i++) {
+        ctx.lineTo(operation.points[i].x, operation.points[i].y);
+      }
+      ctx.stroke();
+    } else if (operation.points.length === 1) {
+      // Single point (dot)
+      ctx.beginPath();
+      ctx.arc(operation.points[0].x, operation.points[0].y, ctx.lineWidth / 2, 0, 2 * Math.PI);
+      ctx.fill();
+    }
+
+    ctx.restore();
+  }, []);
+
+  // Function to draw all saved edits for current page
+  const drawSavedEdits = useCallback((ctx: CanvasRenderingContext2D) => {
+    const edits = pageEdits.get(currentPage);
+    if (!edits || edits.operations.length === 0) return;
+
+    for (const operation of edits.operations) {
+      drawOperation(ctx, operation);
+    }
+  }, [pageEdits, currentPage, drawOperation]);
 
   // Render PDF page when page or zoom changes
   useEffect(() => {
@@ -46,6 +106,13 @@ export function PDFViewer({
         if (editCanvasRef.current) {
           editCanvasRef.current.width = width;
           editCanvasRef.current.height = height;
+          
+          // Clear and redraw saved edits for this page
+          const ctx = editCanvasRef.current.getContext('2d');
+          if (ctx) {
+            ctx.clearRect(0, 0, width, height);
+            drawSavedEdits(ctx);
+          }
         }
       } catch (error) {
         console.error('Error rendering PDF page:', error);
@@ -53,7 +120,7 @@ export function PDFViewer({
     };
 
     renderPage();
-  }, [pdfDocument, currentPage, zoomLevel, canvasRef, editCanvasRef]);
+  }, [pdfDocument, currentPage, zoomLevel, canvasRef, editCanvasRef, drawSavedEdits]);
 
   const handleMouseDown = useCallback((event: React.MouseEvent<HTMLCanvasElement>) => {
     if (currentTool === 'select' || !editCanvasRef.current) return;

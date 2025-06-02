@@ -2,8 +2,8 @@ import * as pdfjsLib from 'pdfjs-dist';
 import { PDFDocument, rgb, PDFPage } from 'pdf-lib';
 import { PageEdits, EditOperation } from '@/types/pdf-editor';
 
-// Set up PDF.js worker
-pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+// Set up PDF.js worker - using a more reliable CDN
+pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://unpkg.com/pdfjs-dist@5.3.31/build/pdf.worker.min.js';
 
 export async function loadPDF(file: File) {
   const arrayBuffer = await file.arrayBuffer();
