@@ -1,6 +1,6 @@
 import { useEffect, useRef, useCallback } from 'react';
 import { renderPDFPage, getCanvasCoordinates } from '@/lib/pdf-utils';
-import { EditTool, Point } from '@/types/pdf-editor';
+import { EditTool, Point, PageEdits, EditOperation } from '@/types/pdf-editor';
 
 interface PDFViewerProps {
   pdfDocument: any;
@@ -9,6 +9,7 @@ interface PDFViewerProps {
   currentTool: EditTool;
   canvasRef: React.RefObject<HTMLCanvasElement>;
   editCanvasRef: React.RefObject<HTMLCanvasElement>;
+  pageEdits: Map<number, PageEdits>;
   onStartDrawing: (point: Point) => void;
   onContinueDrawing: (point: Point) => void;
   onEndDrawing: () => void;

@@ -87,6 +87,27 @@ export function usePDFEditor() {
     if (state.currentTool === 'select') return;
 
     isDrawing.current = true;
+    
+    // For text tool, prompt for text input
+    if (state.currentTool === 'text') {
+      const text = prompt('Enter text:');
+      if (!text) return;
+      
+      currentOperation.current = {
+        id: `op_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        type: state.currentTool,
+        points: [point],
+        properties: { ...state.toolSettings[state.currentTool], text },
+        timestamp: Date.now()
+      };
+      
+      // For text, we can immediately end the operation
+      isDrawing.current = false;
+      addEditOperation(currentOperation.current);
+      currentOperation.current = null;
+      return;
+    }
+
     currentOperation.current = {
       id: `op_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       type: state.currentTool,
@@ -94,7 +115,7 @@ export function usePDFEditor() {
       properties: { ...state.toolSettings[state.currentTool] },
       timestamp: Date.now()
     };
-  }, [state.currentTool, state.toolSettings]);
+  }, [state.currentTool, state.toolSettings, addEditOperation]);
 
   const continueDrawing = useCallback((point: Point) => {
     if (!isDrawing.current || !currentOperation.current) return;
@@ -170,22 +191,28 @@ function drawOperation(ctx: CanvasRenderingContext2D, operation: EditOperation) 
     case 'blur':
       ctx.globalCompositeOperation = 'multiply';
       ctx.filter = `blur(${operation.properties.intensity}px)`;
-      ctx.strokeStyle = 'rgba(128, 128, 128, 0.5)';
+      ctx.strokeStyle = 'rgba(128, 128, 128, 0.7)';
       ctx.lineWidth = operation.properties.brushSize;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
       break;
     case 'erase':
       ctx.globalCompositeOperation = 'destination-out';
       ctx.strokeStyle = 'rgba(0, 0, 0, 1)';
       ctx.lineWidth = operation.properties.size;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
       break;
     case 'text':
       ctx.font = `${operation.properties.fontSize}px ${operation.properties.fontFamily}`;
       ctx.fillStyle = operation.properties.color;
+      ctx.textBaseline = 'top';
       ctx.fillText(operation.properties.text || 'Text', operation.points[0].x, operation.points[0].y);
       ctx.restore();
       return;
   }
 
+  // Draw stroke operations (blur and erase)
   if (operation.points.length > 1) {
     ctx.beginPath();
     ctx.moveTo(operation.points[0].x, operation.points[0].y);
@@ -193,6 +220,11 @@ function drawOperation(ctx: CanvasRenderingContext2D, operation: EditOperation) 
       ctx.lineTo(operation.points[i].x, operation.points[i].y);
     }
     ctx.stroke();
+  } else if (operation.points.length === 1) {
+    // Single point (dot)
+    ctx.beginPath();
+    ctx.arc(operation.points[0].x, operation.points[0].y, ctx.lineWidth / 2, 0, 2 * Math.PI);
+    ctx.fill();
   }
 
   ctx.restore();
