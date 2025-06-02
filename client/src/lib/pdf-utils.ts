@@ -121,23 +121,20 @@ function applyEditToCanvas(ctx: CanvasRenderingContext2D, operation: EditOperati
   
   switch (operation.type) {
     case 'blur':
-      // Apply blur effect
-      ctx.globalCompositeOperation = 'multiply';
-      ctx.filter = `blur(${operation.properties.intensity}px)`;
-      ctx.strokeStyle = 'rgba(128, 128, 128, 0.7)';
+      // White glass morphism effect
+      ctx.globalCompositeOperation = 'source-over';
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)';
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
       ctx.lineWidth = operation.properties.brushSize;
       ctx.lineCap = 'round';
       ctx.lineJoin = 'round';
+      ctx.filter = `blur(${operation.properties.intensity * 0.5}px)`;
       break;
       
     case 'erase':
-      // Erase content
-      ctx.globalCompositeOperation = 'destination-out';
-      ctx.strokeStyle = 'rgba(0, 0, 0, 1)';
-      ctx.lineWidth = operation.properties.size;
-      ctx.lineCap = 'round';
-      ctx.lineJoin = 'round';
-      break;
+      // For PDF generation, we skip erase operations as they should only affect edit overlay
+      ctx.restore();
+      return;
       
     case 'text':
       // Add text

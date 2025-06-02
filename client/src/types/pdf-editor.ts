@@ -1,4 +1,4 @@
-export type EditTool = 'select' | 'blur' | 'erase' | 'text';
+export type EditTool = 'blur' | 'erase' | 'text';
 
 export interface Point {
   x: number;

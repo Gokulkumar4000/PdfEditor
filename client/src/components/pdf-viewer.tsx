@@ -37,14 +37,17 @@ export function PDFViewer({
     
     switch (operation.type) {
       case 'blur':
-        ctx.globalCompositeOperation = 'multiply';
-        ctx.filter = `blur(${operation.properties.intensity}px)`;
-        ctx.strokeStyle = 'rgba(128, 128, 128, 0.7)';
+        // White glass morphism effect
+        ctx.globalCompositeOperation = 'source-over';
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
         ctx.lineWidth = operation.properties.brushSize;
         ctx.lineCap = 'round';
         ctx.lineJoin = 'round';
+        ctx.filter = `blur(${operation.properties.intensity * 0.5}px)`;
         break;
       case 'erase':
+        // Only erase from edit canvas (not original PDF)
         ctx.globalCompositeOperation = 'destination-out';
         ctx.strokeStyle = 'rgba(0, 0, 0, 1)';
         ctx.lineWidth = operation.properties.size;
@@ -123,7 +126,7 @@ export function PDFViewer({
   }, [pdfDocument, currentPage, zoomLevel, canvasRef, editCanvasRef, drawSavedEdits]);
 
   const handleMouseDown = useCallback((event: React.MouseEvent<HTMLCanvasElement>) => {
-    if (currentTool === 'select' || !editCanvasRef.current) return;
+    if (!editCanvasRef.current) return;
 
     isDrawing.current = true;
     const point = getCanvasCoordinates(event.nativeEvent, editCanvasRef.current, zoomLevel);
@@ -131,7 +134,7 @@ export function PDFViewer({
   }, [currentTool, editCanvasRef, zoomLevel, onStartDrawing]);
 
   const handleMouseMove = useCallback((event: React.MouseEvent<HTMLCanvasElement>) => {
-    if (!isDrawing.current || currentTool === 'select' || !editCanvasRef.current) return;
+    if (!isDrawing.current || !editCanvasRef.current) return;
 
     const point = getCanvasCoordinates(event.nativeEvent, editCanvasRef.current, zoomLevel);
     onContinueDrawing(point);
@@ -146,11 +149,10 @@ export function PDFViewer({
 
   const getCursorClass = useCallback(() => {
     switch (currentTool) {
-      case 'select': return 'cursor-pointer';
       case 'blur': return 'cursor-crosshair';
       case 'erase': return 'cursor-crosshair';
       case 'text': return 'cursor-text';
-      default: return 'cursor-default';
+      default: return 'cursor-crosshair';
     }
   }, [currentTool]);
 

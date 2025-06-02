@@ -3,7 +3,7 @@ import { PDFEditorState, EditTool, EditOperation, Point, PageEdits } from '@/typ
 import { generatePDF } from '@/lib/pdf-utils';
 
 const initialState: PDFEditorState = {
-  currentTool: 'select',
+  currentTool: 'blur',
   currentPage: 1,
   totalPages: 0,
   zoomLevel: 100,
@@ -84,7 +84,6 @@ export function usePDFEditor() {
   }, []);
 
   const startDrawing = useCallback((point: Point) => {
-    if (state.currentTool === 'select') return;
 
     isDrawing.current = true;
     

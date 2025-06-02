@@ -12,7 +12,6 @@ interface ToolbarProps {
 
 export function Toolbar({ currentTool, onToolChange, onZoomIn, onZoomOut, zoomLevel }: ToolbarProps) {
   const tools = [
-    { id: 'select' as EditTool, icon: MousePointer, label: 'Select' },
     { id: 'blur' as EditTool, icon: EyeOff, label: 'Blur' },
     { id: 'erase' as EditTool, icon: Eraser, label: 'Erase' },
     { id: 'text' as EditTool, icon: Type, label: 'Text' },
